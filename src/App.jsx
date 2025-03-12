@@ -2,7 +2,7 @@ import { useState } from 'react'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  // Remove unused count and setCount state variables
   const [memeUrl, setMemeUrl] = useState('')
 
   const fetchMeme = async () => {
@@ -13,7 +13,8 @@ function App() {
 
   return (
     <div className="app-container">
-      <h1 className="title">"No bad days with memes!"</h1>
+      {/* Fix quote escaping issues */}
+      <h1 className="title">No bad days with memes!</h1>
       <div className="button-container">
         <button 
           onClick={() => {
