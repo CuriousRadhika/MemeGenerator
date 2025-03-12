@@ -1,4 +1,4 @@
-name: CI/CD for Meme Generator
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -16,95 +16,68 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
-  lint:
-    name: Lint Code
+  validate:
+    # Combines lint and test in one job
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          # Only fetch the files needed for linting
-          sparse-checkout: |
-            src/
-          fetch-depth: 1
-
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
-
-      # Further optimize by combining ESLint installation and linting
-      - name: Install and run ESLint
-        run: |
-          npm install eslint @eslint/js --no-package-lock
-          npx eslint src --ext .js,.jsx --max-warnings=0 --cache
-        env:
-          # Set smaller memory limit for faster processing
-          NODE_OPTIONS: "--max-old-space-size=2048"
-
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    # Run in parallel with lint job (no dependency)
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-
       - name: Install dependencies
         run: npm install
-
-      # Placeholder for tests
-      - name: Run tests (placeholder)
-        run: echo "No tests configured yet. Add tests later!"
+      - name: Lint code
+        run: npm run lint
+      - name: Run tests
+        run: npm test
 
   build:
-    name: Build Project
-    # Depends on both lint and test
-    needs: [lint, test]
+    needs: validate
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
-
       - name: Clean installation
         run: |
           rm -rf node_modules package-lock.json || true
           npm install
-
       - name: Build project
         run: npm run build
-
-      # Directly upload using Pages artifact
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
         with:
-          path: build
+          name: build-artifacts
+          path: './build'
 
   deploy:
-    name: Deploy to GitHub Pages
     needs: build
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
     steps:
-      # Deploy directly from the artifact uploaded in the build job
+      - name: Download build artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+          path: './build'
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './build'
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
