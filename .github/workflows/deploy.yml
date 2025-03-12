@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -26,13 +26,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          # Removed caching to prevent failures
+          node-version: '18' # Updated from 16 to 18
 
-      - name: Install dependencies
-        run: npm ci # Faster than npm install for CI environments
+      # Clean installation to fix Rollup issue
+      - name: Clean installation
+        run: |
+          rm -rf node_modules package-lock.json || true
+          npm install
 
       - name: Build project
         run: npm run build
