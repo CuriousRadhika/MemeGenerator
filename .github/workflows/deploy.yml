@@ -37,19 +37,14 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install ESLint only
-        run: npm install eslint @eslint/js --no-package-lock
-
-      - name: Run ESLint with caching
-        uses: actions/cache@v4
-        with:
-          path: ~/.eslintcache
-          key: ${{ runner.os }}-eslint-${{ hashFiles('src/**/*.{js,jsx}') }}
-          restore-keys: |
-            ${{ runner.os }}-eslint-
-      
-      - name: Lint changed files
-        run: npx eslint src --ext .js,.jsx --cache --max-warnings=0
+      # Further optimize by combining ESLint installation and linting
+      - name: Install and run ESLint
+        run: |
+          npm install eslint @eslint/js --no-package-lock
+          npx eslint src --ext .js,.jsx --max-warnings=0 --cache
+        env:
+          # Set smaller memory limit for faster processing
+          NODE_OPTIONS: "--max-old-space-size=2048"
 
   test:
     name: Run Tests
@@ -117,13 +112,13 @@ jobs:
           path: build
 
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v3
 
       - name: Upload artifact to GitHub Pages
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
           path: './build'
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v2
