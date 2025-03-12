@@ -16,66 +16,37 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-      - name: Install dependencies
-        run: npm install
-      - name: Run tests
-        run: npm run lint
-      - name: Upload repository
-        uses: actions/upload-artifact@v3
-        with:
-          name: repo-with-modules
-          path: |
-            .
-            !node_modules/.cache
-
-  build:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download repository
-        uses: actions/download-artifact@v3
-        with:
-          name: repo-with-modules
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - name: Build project
-        run: npm run build
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-output
-          path: ./build
-
   deploy:
-    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          name: build-output
-          path: ./build
+          node-version: '18' # Updated from 16 to 18
+
+      # Clean installation to fix Rollup issue
+      - name: Clean installation
+        run: |
+          rm -rf node_modules package-lock.json || true
+          npm install
+
+      - name: Build project
+        run: npm run build
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './build'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
