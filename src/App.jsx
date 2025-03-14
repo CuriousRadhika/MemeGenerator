@@ -14,7 +14,7 @@ function App() {
   return (
     <div className="app-container">
       {/* Fix quote escaping issues */}
-      <h1 className="title">No bad days with memes!!</h1>
+      <h1 className="title">No bad days with memes!</h1>
       <div className="button-container">
         <button 
           onClick={() => {
